@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "UACH SEGA Tools",
     "version": "1.5.3",
     "description": "Calcula fácilmente tu promedio general, por semestre o parciales en curso y rellena más rápido tu evaluación docente.",
@@ -11,11 +11,11 @@
     },
     "content_scripts": [{
         "matches": [
-            "*://*.sega.uach.mx/sega/kardex/*",
-            "*://*.sega.uach.mx/sega/evaluaciones/*"
+            "*://*.segaalumnos.uach.mx/kardex/*",
+            "*://*.segaalumnos.uach.mx/evaluacion_docentes/*"
         ],
         "css": [
-            "src/main.css"
+            "src/main-chrome.css"
         ],
         "js": [
             "src/app-es5.js"
