@@ -299,6 +299,15 @@
     text-transform: uppercase;
 }
 
+#tools-popup.average>.popup-body>.bodrow>.message {
+    width: 100%;
+    -ms-flex-item-align: center;
+        align-self: center;
+    text-align: center;
+    color: #959595;
+    font-style: italic;
+}
+
 #tools-popup.average>.popup-body>.bodrow>.item {
     position: relative;
     min-width: 110px;

@@ -62,24 +62,24 @@ var USTools = {
         document.getElementsByTagName('head')[0].appendChild(css_sh);
 
         button.type = 'button';
-        button.id = USTools.button;
-        button.innerHTML = '<i class="mdi mdi-loading mdi-spin" style="animation-duration: 1s"></i>';
+        button.id = this.button;
+        button.innerHTML = '<i class="mdi mdi-loading mdi-spin" style="animation-duration: 5s"></i>';
         document.querySelector('body.page-container-bg-solid').appendChild(button);
-        USTools.button = button;
+        this.button = button;
 
-        USTools.func = USTools.tools.getPath()[0] === 'evaluacion_docentes' ? 'Evaluation' : 'Average';
-        USTools.createPopup();
-        window.USTools[USTools.func].init();
-        button.addEventListener('click', window.USTools[USTools.func].run, false);
+        this.func = this.tools.getPath()[0] === 'evaluacion_docentes' ? 'Evaluation' : 'Average';
+        this.createPopup();
+        window.USTools[this.func].init();
+        button.addEventListener('click', window.USTools[this.func].run, false);
     },
     createPopup: function() {
         document.querySelector('body.page-container-bg-solid').insertAdjacentHTML('beforeend', '<div id="tools-popup" class="charging"><div class="popup-toolbar"><div class="about">Las herramientas <i>calcular promedio</i> y <i>rellenar evaluación</i> son funcionalidad de la propia extensión, si te gustaría que se añadieran más, ponte en contacto a través de <a href="mailto:a331330@uach.mx">a331330@uach.mx</a></div><button type="button" id="about-tool" title="Abrir o cerrar información"><i class="mdi mdi-information-outline"></i></button><button type="button" id="close-popup" title="Cerrar ventana"><i class="mdi mdi-close"></i></button></div><div class="popup-body"></div></div>');
-        document.getElementById('close-popup').addEventListener('click', USTools.closePopup, false);
-        document.getElementById('about-tool').addEventListener('click', USTools.toggleAbout, false);
+        document.getElementById('close-popup').addEventListener('click', this.closePopup, false);
+        document.getElementById('about-tool').addEventListener('click', this.toggleAbout, false);
     },
     closePopup: function() {
         document.querySelector('body.page-container-bg-solid #tools-popup').classList.remove('opened');
-        window.USTools[USTools.func].running = false;
+        window.USTools[this.func].running = false;
     },
     toggleAbout: function() {
         var el = document.querySelector('body.page-container-bg-solid #tools-popup .popup-toolbar .about');
@@ -91,8 +91,12 @@ var USTools = {
         }
     },
     Average: {
-        semesters: [],
-        grades: {},
+        semesters: {
+            result: 'Aún no tienes calificaciones registradas'
+        },
+        grades: {
+            result: 'Aún no tienes calificaciones registradas'
+        },
         running: false,
         init: function() {
             USTools.button.setAttribute('info', 'Calcular promedio');
@@ -101,35 +105,40 @@ var USTools = {
             document.querySelector('body.page-container-bg-solid #tools-popup').classList.add('average');
         },
         bindKardex: function() {
-            if (this.semesters.length <= 0) {
+            if (this.semesters?.constructor === Object || this.semesters.length <= 0) {
                 var kardex = document.querySelectorAll('table.table tbody tr.hoverTable'),
                     semesters = [];
                 if (kardex.length >= 1) {
                     kardex.forEach(function(e) {
                         var children = e.children;
-                        if (!semesters[parseInt(children[0].innerText) - 1]) {
-                            semesters[parseInt(children[0].innerText) - 1] = {};
-                            semesters[parseInt(children[0].innerText) - 1].average = 0;
-                            semesters[parseInt(children[0].innerText) - 1].count = 0;
+                        if (!semesters[parseInt(children[0].innerText)]) {
+                            semesters[parseInt(children[0].innerText)] = {};
+                            semesters[parseInt(children[0].innerText)].average = 0;
+                            semesters[parseInt(children[0].innerText)].count = 0;
                         }
-                        if (children[7].innerText !== 'AP' && children[7].innerText !== 'NA') {
-                            semesters[parseInt(children[0].innerText) - 1].average += parseFloat(children[3].innerText > 5 ? children[3].innerText : children[4].innerText);
-                            semesters[parseInt(children[0].innerText) - 1].count++;
+                        if (children[7].innerText == 'AC') {
+                            semesters[parseInt(children[0].innerText)].average += parseFloat(children[3].innerText > 5 ? children[3].innerText : children[4].innerText);
+                            semesters[parseInt(children[0].innerText)].count++;
                         }
                     });
+                    
                     this.semesters = semesters;
                     this.calc('kardex');
                 } else {
                     alert('Espera que termine de cargar la página o recárgala');
                 }
+            } else {
+                if(document.querySelectorAll('body.page-container-bg-solid #tools-popup .popup-body .bodrow').length <= 0){
+                    document.querySelector('body.page-container-bg-solid #tools-popup .popup-body').insertAdjacentHTML('beforeend', `<div class="bodrow general" name="Promedio general"><span class="message">${this.semesters.result}</span></div>`);
+                }
             }
         },
         bindGrades: function() {
-            if (Object.keys(USTools.Average.grades).length <= 0) {
-                USTools.tools.ajaxReq('calificaciones/index', function(grades) {
+            if (!this.grades?.result) {
+                this.tools.ajaxReq('calificaciones/index', function(grades) {
                     grades = grades.querySelectorAll('table.table-responsive.table.table-hover tbody tr');
                     var subjects = {};
-
+                    
                     if (grades.length >= 1) {
                         grades.forEach(function(e) {
                             var children = e.children;
@@ -138,21 +147,24 @@ var USTools = {
                             }
                             subjects[children[2].innerText.trim()].push({grade: parseFloat(children[5].innerText)});
                         });
-                        USTools.Average.grades = subjects;
-                        USTools.Average.calc('grades');
-                    } else {
-                        alert('Espera que termine de cargar la página o recárgala');
+                        this.grades = subjects;
+                        this.calc('grades');
                     }
                 }, function() {
                     USTools.closePopup();
                 }, 'Ocurrió un error al intentar obtener tus calificaciones, por favor recarga la página e inténtalo de nuevo');
+            } else {
+                if(document.querySelectorAll('body.page-container-bg-solid #tools-popup .popup-body .bodrow.partials').length <= 0){
+                    document.querySelector('body.page-container-bg-solid #tools-popup .popup-body').insertAdjacentHTML('beforeend', `<div class="bodrow partials" name="Promedio por parciales"><span class="message">${this.grades.result}</span></div>`);
+                }
             }
         },
         run: function() {
-            if (!USTools.Average.running) {
-                USTools.Average.running = true;
+            if (!this.running) {
+                this.running = true;
 
                 document.querySelector('body.page-container-bg-solid #tools-popup').classList.add('opened', 'charging');
+                
                 USTools.Average.bindKardex();
                 USTools.Average.bindGrades();
                 document.querySelector('body.page-container-bg-solid #tools-popup').classList.remove('charging');
@@ -167,19 +179,19 @@ var USTools = {
                     var total = this.semesters.reduce(function(sum, curr) { return sum + curr.average; }, 0),
                         count = this.semesters.reduce(function(sum, curr) { return sum + curr.count; }, 0);
 
-                    document.querySelector('body.page-container-bg-solid #tools-popup .popup-body').insertAdjacentHTML('beforeend', '<div class="bodrow general" name="Promedio general"><div class="item ' + colors[Math.floor(Math.random() * colors.length)] + '" average="' + (total / count).toFixed(2) + '">Global</div></div><div class="bodrow semesters" name="Por semestre"></div>');
+                    document.querySelector('body.page-container-bg-solid #tools-popup .popup-body').insertAdjacentHTML('beforeend', `<div class="bodrow general" name="Promedio general"><div class="item ${colors[Math.floor(Math.random() * colors.length)]}" average="${(total / count).toFixed(2)}">Global</div></div><div class="bodrow semesters" name="Por semestre"></div>`);
                     this.semesters.forEach(function(e, i) {
-                        document.querySelector('body.page-container-bg-solid #tools-popup .popup-body .bodrow.semesters').insertAdjacentHTML('beforeend', '<div class="item ' + colors[Math.floor(Math.random() * colors.length)] + '" average="' + (e.average / e.count).toFixed(2) + '">Semestre ' + (i + 1) + '</div>');
+                        document.querySelector('body.page-container-bg-solid #tools-popup .popup-body .bodrow.semesters').insertAdjacentHTML('beforeend', `<div class="item ${colors[Math.floor(Math.random() * colors.length)]}" average="${(e.average / e.count).toFixed(2)}">${(i>0?'Semestre '+i:'Optativas')}</div>`);
                     });
                     break;
                 case 'grades':
-                    var grades = USTools.Average.grades;
+                    var grades = this.grades;
                     document.querySelector('body.page-container-bg-solid #tools-popup .popup-body').insertAdjacentHTML(
                         'beforeend', '<div class="bodrow partials" name="Parciales por materia"></div>'
                     );
                     for (var e in grades) {
                         document.querySelector('body.page-container-bg-solid #tools-popup .popup-body .bodrow.partials').insertAdjacentHTML('beforeend',
-                            '<div class="item ' + colors[Math.floor(Math.random() * colors.length)] + '" title="' + e.trim() + '" average="' + USTools.Average.avg(grades[e]) + '">' + e.trim() + '</div>');
+                            `<div class="item ${colors[Math.floor(Math.random() * colors.length)]}" title="${e.trim()}" average="${this.avg(grades[e])}">${e.trim()}</div>'`);
                     }
                     break;
                 default:
@@ -236,17 +248,17 @@ var USTools = {
                 throw new Error('Isn\'t allowed to perform this action');
             }
 
-            if (!USTools.Evaluation.running) {
-                USTools.Evaluation.running = true;
+            if (!this.running) {
+                this.running = true;
 
-                if (USTools.Evaluation.bindParams()) {
+                if (this.bindParams()) {
                     document.querySelector('body.page-container-bg-solid #tools-popup').classList.add('opened');
                     document.querySelector('body.page-container-bg-solid #tools-popup').classList.remove('charging');
 
                     if (document.querySelector('body.page-container-bg-solid #tools-popup .popup-body').childElementCount < this.teachers.length) {
-                        USTools.Evaluation.teachers.forEach(function(e) {
+                        this.teachers.forEach(function(e) {
                             document.querySelector('body.page-container-bg-solid #tools-popup .popup-body').insertAdjacentHTML('beforeend',
-                                '<div class="bodrow" id="' + e.id + '"><input type="checkbox" class="teacher-control" id="teacher_' + e.id + '_control"><div class="teacher-name" title="' + e.subject + '">' + e.id + '. ' + e.teacher + ' (' + e.subject + ')</div><div class="actions"><select id="teacher_' + e.id + '" disabled><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><button class="send-button" disabled>Rellenar</button></div></div>');
+                                `<div class="bodrow" id="${e.id}"><input type="checkbox" class="teacher-control" id="teacher_${e.id}_control"><div class="teacher-name" title="${e.subject}">${e.id}. ${e.teacher} (${e.subject})</div><div class="actions"><select id="teacher_${e.id}" disabled><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><button class="send-button" disabled>Rellenar</button></div></div>`);
                         });
                         document.querySelectorAll('body.page-container-bg-solid #tools-popup .popup-body .bodrow .teacher-control').forEach(function(e) {
                             e.addEventListener('change', USTools.Evaluation.toggle, false);
@@ -256,7 +268,7 @@ var USTools = {
                         });
                     }
                 } else {
-                    USTools.Evaluation.running = false;
+                    this.running = false;
                 }
             } else {
                 USTools.closePopup();

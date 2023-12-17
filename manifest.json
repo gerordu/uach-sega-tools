@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "UACH SEGA Tools",
-    "version": "1.5.3",
+    "version": "1.5.5",
     "description": "Calcula fácilmente tu promedio general, por semestre o parciales en curso y rellena más rápido tu evaluación docente.",
     "author": "Gerardo OD",
     "default_locale": "es",
